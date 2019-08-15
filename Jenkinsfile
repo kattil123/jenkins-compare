@@ -13,14 +13,14 @@ node(){
     }
 
     stage('Build Docker Image'){
-    	sh "/usr/local/bin/docker build -t myscript:1.0 ./Dockerfile/"
+    	sh "/usr/local/bin/docker build -t myscript:1.0 /Users/Shared/Jenkins/Home/workspace/jenkinscompare-pipeline/Dockerfile/"
     }
 	
     // Python scripts are stored under python-parse folder of repository. So used dir step to change directory    
     
     stage('Python Script to match plugins information'){
  	   withCredentials([usernamePassword(credentialsId: 'github', passwordVariable: 'password', usernameVariable: 'username')]) {
-    		sh "/usr/local/bin/docker run -i -v /var/lib/jenkins/workspace/plugin-docker/:/root myscript:1.0 $Jenkins_URL $username $password"
+    		sh "/usr/local/bin/docker run -i -v /Users/Shared/Jenkins/Home/workspace/jenkinscompare-pipeline:/root myscript:1.0 $Jenkins_URL $username $password"
     	   }
     }
     
