@@ -13,7 +13,7 @@ node(){
     }
 
     stage('Build Docker Image'){
-    	sh "/usr/local/bin/docker build -t myscript:1.0 Dockerfile/"
+    	sh "/usr/local/bin/docker build -t myscript:1.0 ./Dockerfile/"
     }
 	
     // Python scripts are stored under python-parse folder of repository. So used dir step to change directory    
