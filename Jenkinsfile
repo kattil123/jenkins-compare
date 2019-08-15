@@ -20,7 +20,7 @@ node(){
     
     stage('Python Script to match plugins information'){
  	   withCredentials([usernamePassword(credentialsId: 'github', passwordVariable: 'password', usernameVariable: 'username')]) {
-    		sh "docker run -i -v /var/lib/jenkins/workspace/plugin-docker/:/root myscript:1.0 $Jenkins_URL $username $password"
+    		sh "/usr/local/bin/docker run -i -v /var/lib/jenkins/workspace/plugin-docker/:/root myscript:1.0 $Jenkins_URL $username $password"
     	   }
     }
     
