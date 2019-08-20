@@ -1,27 +1,36 @@
 node(){
     
-    properties(
-    [
-        parameters(
-            [string(defaultValue: '', name: 'Jenkins_URL', description: 'Enter Remote Jenkins Instance URL')]
-            )
-    ]
-    )    
+    properties([
+        parameters([
+            string(defaultValue: '', name: 'GoldCopy_Jenkins_URL', description: 'Enter Gold Copy Jenkins Instance URL'),
+            string(defaultValue: '', name: 'GoldCopy_Username', description: 'Enter Gold Copy Jenkins Instance Username'),
+            string(defaultValue: '', name: 'Remote_Jenkins_URL', description: 'Enter Remote Jenkins Instance URL'),
+            string(defaultValue: '', name: 'Remote_Username', description: 'Enter Remote Jenkins Instance Username'),
+            string(defaultValue: '', name: 'Remote_Host', description: 'Enter Remote Machine Host/Ipaddress'),
+            string(defaultValue:'', name:'Remote_User',description: 'Enter Remote Machine User'),
+            ])
+    ])    
 
     stage('checkout'){
     	checkout scm
     }
 
-    stage('Build Docker Image'){
-    	sh "/usr/local/bin/docker build -t myscript:1.0 /Users/Shared/Jenkins/Home/workspace/jenkinscompare-pipeline/Dockerfile"
-    }
-	
-    // Python scripts are stored under python-parse folder of repository. So used dir step to change directory    
-    
-    stage('Python Script to match plugins information'){
- 	   withCredentials([usernamePassword(credentialsId: 'github', passwordVariable: 'password', usernameVariable: 'username')]) {
-    		sh "/usr/local/bin/docker run -i -v /Users/Shared/Jenkins/Home/workspace/jenkinscompare-pipeline:/root myscript:1.0 $Jenkins_URL $username $password"
-    	   }
+    stage('Install Python Modules'){
+    	def check = sh returnStatus: true, script: 'python -c "import pexpect"'
+        if (check == 1){
+            install()
+            echo "Installed Successfully"    
+        }
+        else
+        echo "Already Installed"
+    }	
+    // Store GoldCopy Master Password in GoldCopy_Password secret variable 
+    // Store Remote Jenkins Master Password in Remote_Password secret variable
+    // Store Remote Machine Password in Remote_vm_Password secret variable
+    stage('Python Script to match plugins information'){ 
+        withCredentials([string(credentialsId: 'GoldCopy_Password', variable: 'GoldCopy_Password'), string(credentialsId: 'Remote_Password', variable: 'Remote_Password'), string(credentialsId: 'Remote_vm_Password', variable: 'Remote_vm_Password')]) {
+        sh "python plugin1.py $GoldCopy_Jenkins_URL $GoldCopy_Username $GoldCopy_Password $Remote_Jenkins_URL $Remote_Username $Remote_Password $Remote_Host $Remote_User $Remote_vm_Password"
+        }  
     }
     
     stage('Send Report'){
@@ -29,4 +38,10 @@ node(){
         subject: 'Plugin Configuration Match Report', to: 'chakresh.kolluru@infostretch.com'
     }
     
+}
+
+def install(){
+    sh "pip install pexpect"
+    sh "pip install python-jenkins"
+    sh "pip install jenkinsapi"
 }

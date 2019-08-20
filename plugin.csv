@@ -74,3 +74,4 @@ pipeline-stage-step,2.3
 docker-commons,1.15
 pipeline-rest-api,2.11
 pam-auth,1.5.1
+active-directory,2.16
