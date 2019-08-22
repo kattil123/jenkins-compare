@@ -1,32 +1,63 @@
 node(){
-    
-    properties(
-    [
-        parameters(
-            [string(defaultValue: '', name: 'Jenkins_URL', description: 'Enter Remote Jenkins Instance URL')]
-            )
-    ]
-    )    
+    try{
+        properties([
+            parameters([
+                string(defaultValue: '', name: 'GoldCopy_Jenkins_URL', description: 'Enter Gold Copy Jenkins Instance URL'),
+                string(defaultValue: '', name: 'GoldCopy_Username', description: 'Enter Gold Copy Jenkins Instance Username'),
+                string(defaultValue: '', name: 'Remote_Jenkins_URL', description: 'Enter Remote Jenkins Instance URL'),
+                string(defaultValue: '', name: 'Remote_Username', description: 'Enter Remote Jenkins Instance Username'),
+                string(defaultValue: '', name: 'Remote_Host', description: 'Enter Remote Machine Host/Ipaddress'),
+                string(defaultValue: '', name:'Remote_User', description: 'Enter Remote Machine User')
+                ])
+        ])    
 
-    stage('checkout'){
-    	checkout scm
-    }
+        stage('Clean Workspace'){
+            cleanWs()
+        }
 
-    stage('Build Docker Image'){
-    	sh "docker build -t myscript:1.0 python-parse/dockerfile/"
+        stage('checkout'){
+            checkout scm
+        }
+
+        stage('Install Python Modules'){
+     #       def pexpect = sh returnStatus: true, script: 'python -c "import pexpect"'
+     #       def jenkins = sh returnStatus: true, script: 'python -c "import jenkins"'
+     #       def jenkinsapi = sh returnStatus: true, script: 'python -c "import jenkinsapi"'
+     #       if (pexpect == 1 || jenkins == 1 || jenkinsapi == 1){
+     #           install()
+      sh '''
+           /Users/ajithkattil/anaconda3/bin/pip3 install pexpect;
+          /Users/ajithkattil/anaconda3/bin/pip3 install  jenkins;
+         /Users/ajithkattil/anaconda3/bin/pip3 install  jenkinsapi
+        ''' 
+         # echo "Installed Successfully"    
+         #   }
+         #   else
+         #   echo "Already Installed"
+        }	
+        // Store GoldCopy Master Password in GoldCopy_Password secret variable 
+        // Store Remote Jenkins Master Password in Remote_Password secret variable
+        // Store Remote Machine Password in Remote_vm_Password secret variable
+        stage('Python Script to match plugins information'){ 
+            withCredentials([string(credentialsId: 'GoldCopy_Password', variable: 'GoldCopy_Password'), string(credentialsId: 'Remote_Password', variable: 'Remote_Password'), string(credentialsId: 'Remote_vm_Password', variable: 'Remote_vm_Password')]) {
+            sh "python plugin1.py $GoldCopy_Jenkins_URL $GoldCopy_Username $GoldCopy_Password $Remote_Jenkins_URL $Remote_Username $Remote_Password $Remote_Host $Remote_User $Remote_vm_Password"
+            }  
+        }
     }
-	
-    // Python scripts are stored under python-parse folder of repository. So used dir step to change directory    
-    
-    stage('Python Script to match plugins information'){
- 	   withCredentials([usernamePassword(credentialsId: 'github', passwordVariable: 'password', usernameVariable: 'username')]) {
-    		sh "docker run -i -v /var/lib/jenkins/workspace/plugin-docker/:/root myscript:1.0 $Jenkins_URL $username $password"
-    	   }
+    catch(Exception e){
+        error "Error due to exception :  $e"
+    }
+    finally{
+        stage('Send Report'){
+            emailext attachmentsPattern: '**/report.csv', body: 'Please find the below report status for plugins configuration', 
+            subject: 'Plugin Configuration Match Report - ${BUILD_STATUS}', to: 'ajith.kattil@infostretch.com'
+        }
     }
     
-    stage('Send Report'){
-	emailext attachmentsPattern: '**/report.csv', body: 'Please find the below report status for plugins configuration', 
-        subject: 'Plugin Configuration Match Report', to: 'chakresh.kolluru@infostretch.com'
-    }
-    
+}
+
+def install(){
+    sh "pip install pexpect"
+    sh "pip install python-jenkins"
+    sh "pip install jenkinsapi"
 }
