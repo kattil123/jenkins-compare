@@ -35,7 +35,7 @@ node(){
     
     stage('Send Report'){
 	emailext attachmentsPattern: '**/report.csv', body: 'Please find the below report status for plugins configuration', 
-        subject: 'Plugin Configuration Match Report', to: 'chakresh.kolluru@infostretch.com'
+        subject: 'Plugin Configuration Match Report', to: 'ajith.kattil@infostretch.com'
     }
     
 }
